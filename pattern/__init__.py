@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""
+r"""
 
 >>> Pattern('/{a}').parse('/foo.html')
 PatternResult(a='foo.html')
@@ -23,7 +23,8 @@ Traceback (most recent call last):
  ...
 ValueError: '/c/b/a' does not match pattern '/{a}'
 
->>> StrictPathPattern('/{a}/{b}/{c}').parse('/c/b/a').kwargs == dict(a="c", b="b", c="a")
+>>> StrictPathPattern('/{a}/{b}/{c}').parse('/c/b/a').kwargs == \
+...     dict(a="c", b="b", c="a")
 True
 
 >>> Pattern('/{0}bar').parse('/foobar')
@@ -31,7 +32,8 @@ PatternResult('foo')
 
 Pattern matching works in reverse too.
 
->>> Pattern('/{root}/{branch}/{leaf}/{0}').replace('d', root="a", branch="b", leaf=3)
+>>> Pattern('/{root}/{branch}/{leaf}/{0}').replace(
+...     'd', root="a", branch="b", leaf=3)
 '/a/b/3/d'
 
 >>> def my_callable(a, option='foo', beta=10):
@@ -41,8 +43,8 @@ Pattern matching works in reverse too.
 ('alpha123', -5, 'foo')
 
 Adjacent matches will consume one character each until the last. This behavior
-currently follows the behavior of the regular expression (.+?) and is subject to
-change in future versions.
+currently follows the behavior of the regular expression (.+?) and is subject
+to change in future versions.
 
 >>> my_pattern = Pattern('{0}{1}{a}')
 
@@ -84,8 +86,9 @@ class PatternResult(object):
         return function(*self.args, **self.kwargs)
 
     def __repr__(self):
-        return 'PatternResult({})'.format(', '.join([repr(arg) for arg in self.args] +
-                                                    ['{}={!r}'.format(*item) for item in self.kwargs.items()]))
+        return 'PatternResult({})'.format(', '.join(
+            [repr(arg) for arg in self.args] +
+            ['{}={!r}'.format(*item) for item in self.kwargs.items()]))
 
 
 class Pattern(object):
@@ -96,20 +99,27 @@ class Pattern(object):
     def __init__(self, pattern_string, *arg_xformers, **transformers):
         self.pattern_string = pattern_string
         self.transformers = transformers
-        self.transformers.update({i:v for i, v in enumerate(arg_xformers)})
+        self.transformers.update({i: v for i, v in enumerate(arg_xformers)})
         self.matches = dict()
 
     def match(self, matchobject):
-        return r"(?P<_%s>%s)" % (matchobject.group(1), self.matches.get(matchobject.group(1), self.default_match))
+        return r"(?P<_%s>%s)" % (
+            matchobject.group(1),
+            self.matches.get(matchobject.group(1), self.default_match)
+        )
 
     def regex(self):
-        return self.prefix + re.sub(r"(?<!\\\{)\\\{(0|[_a-zA-Z1-9][_a-zA-Z0-9]*)\\\}",
-                                   self.match, re.escape(self.pattern_string)) + self.postfix
+        return self.prefix + re.sub(
+            r"(?<!\\\{)\\\{(0|[_a-zA-Z1-9][_a-zA-Z0-9]*)\\\}",
+            self.match,
+            re.escape(self.pattern_string)
+        ) + self.postfix
 
     def parse(self, string):
         match = re.match(self.regex(), string)
         if not match:
-            raise ValueError("%r does not match pattern %r" % (string, self.pattern_string))
+            raise ValueError("%r does not match pattern %r" % (
+                string, self.pattern_string))
         args, values = dict(), match.groupdict()
         for key in list(values):
             if key[0] == '_':
@@ -117,7 +127,8 @@ class Pattern(object):
                     k, which = int(key[1:]), args
                 except ValueError:
                     k, which = key[1:], values
-                which[k] = self.transformers.get(k, lambda x:x)(values.pop(key))
+                which[k] = self.transformers.get(k, lambda x: x)(
+                    values.pop(key))
             else:
                 getattr(self, 'handle_%s' % key)(values.pop(key), args, values)
         args = [value for key, value in sorted(args.items())]
